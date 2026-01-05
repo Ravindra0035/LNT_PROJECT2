@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CINEWAVE | Cinematic Discovery</title>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg-deep: #050505;
+            --bg-surface: #111111;
+            --accent: #9B1C31;
+            --text-main: #f8fafc;
+            --text-dim: #94a3b8;
+            --nav-height: 80px;
+        }
+
+        body {
+            background-color: var(--bg-deep);
+            color: var(--text-main);
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            margin: 0;
+            overflow-x: hidden;
+        }
+
+        .navbar {
+            background: rgba(5, 5, 5, 0.95);
+            backdrop-filter: blur(15px);
+            z-index: 1000;
+            padding: 10px 20px !important;
+        }
+        .navbar-brand { font-weight: 800; color: var(--accent) !important; cursor: pointer; text-decoration: none; }
+        .nav-link-custom { 
+            color: var(--text-dim); text-decoration: none; font-weight: 700; text-transform: uppercase;
+            cursor: pointer; margin-right: 15px; font-size: 0.75rem; transition: 0.3s;
+        }
+        .nav-link-custom.active { color: white; border-bottom: 2px solid var(--accent); }
+
+        .search-wrapper {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid #333;
+            border-radius: 50px;
+            padding: 5px 15px;
+            display: flex;
+            align-items: center;
+            flex-grow: 1;
+            max-width: 300px;
+        }
+        .search-wrapper input {
+            background: transparent; border: none; color: white;
+            padding-left: 10px; outline: none; width: 100%; font-size: 0.85rem;
+        }
+
+        .hero {
+            position: relative;
+            height: 50vh;
+            display: flex;
+            align-items: center;
+            overflow: hidden;
+        }
+        .hero-backdrop { position: absolute; inset: 0; background-size: cover; background-position: center; z-index: 1; transition: 0.5s; }
+        .hero-overlay { position: absolute; inset: 0; z-index: 2; background: linear-gradient(0deg, var(--bg-deep) 10%, transparent 100%); }
+        .hero-content { position: relative; z-index: 3; width: 100%; }
+
+        .movie-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 15px;
+            padding: 20px;
+        }
+
+        .movie-card {
+            aspect-ratio: 2/3;
+            border-radius: 12px;
+            position: relative;
+            overflow: hidden;
+            background: #1a1a1a;
+            animation: fadeIn 0.6s ease forwards;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .skeleton {
+            position: relative;
+            overflow: hidden;
+            background-color: #1a1a1a;
+            border-radius: 12px;
+        }
+
+        .skeleton::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            left: 0;
+            transform: translateX(-100%);
+            background: linear-gradient(
+                90deg,
+                rgba(255, 255, 255, 0) 0,
+                rgba(255, 255, 255, 0.05) 20%,
+                rgba(255, 255, 255, 0.1) 60%,
+                rgba(255, 255, 255, 0)
+            );
+            animation: shimmer 2s infinite;
+        }
+
+        @keyframes shimmer {
+            100% { transform: translateX(100%); }
+        }
+
+        .movie-card img { width: 100%; height: 100%; object-fit: cover; }
+        
+        .card-info-overlay {
+            position: absolute; inset: 0;
+            background: linear-gradient(transparent, rgba(0,0,0,0.9));
+            display: flex; flex-direction: column; justify-content: flex-end;
+            padding: 10px;
+            opacity: 1;
+        }
+
+        .btn-circle {
+            width: 32px; height: 32px; border-radius: 50%; border: 1px solid white;
+            color: white; background: transparent; display: flex; align-items: center; justify-content: center;
+            font-size: 0.8rem;
+        }
+        .active-list { background: #2ecc71 !important; border-color: #2ecc71 !important; }
+
+        @media (max-width: 768px) {
+            .navbar { flex-direction: column; gap: 8px; }
+            .search-wrapper { max-width: 100%; width: 100%; }
+            .movie-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+    </style>
+</head>
+<body>
+
+<nav class="navbar fixed-top">
+    <div class="container-fluid d-flex justify-content-between align-items-center">
+        <a class="navbar-brand fs-4" onclick="showHome()">CINEWAVE</a>
+        <div class="d-flex">
+            <span class="nav-link-custom active" id="link-home" onclick="showHome()">Home</span>
+            <span class="nav-link-custom" id="link-watchlist" onclick="showWatchlist()">Watchlist</span>
+        </div>
+    </div>
+    <div class="search-wrapper mt-2">
+        <i class="fas fa-search" onclick="performSearch()"></i>
+        <input type="text" id="searchInput" placeholder="Search for movies...">
+    </div>
+</nav>
+
+<div style="height: 140px;" class="d-block d-md-none"></div>
+<div style="height: 80px;" class="d-none d-md-block"></div>
+
+<section class="hero" id="heroSection">
+    <div id="heroBackdrop" class="hero-backdrop"></div>
+    <div class="hero-overlay"></div>
+    <div class="container-fluid px-4 hero-content">
+        <h1 class="display-5 fw-bold" id="heroTitle">Featured</h1>
+        <p class="small mb-3" id="heroPlot" style="max-width: 500px; color: var(--text-dim);"></p>
+        <div class="d-flex gap-2">
+            <button class="btn btn-danger btn-sm px-3 fw-bold" id="heroPlayBtn">TRAILER</button>
+            <button class="btn btn-outline-light btn-sm px-3 fw-bold" id="heroListBtn">+ LIST</button>
+        </div>
+    </div>
+</section>
+
+<div class="main-content">
+    <div class="container-fluid px-4">
+        <h5 class="fw-bold mb-3 mt-4" id="gridHeader">Trending Now</h5>
+    </div>
+    <div class="movie-grid" id="movieGrid"></div>
+    <div id="loadMoreTrigger" style="height: 50px;"></div>
+</div>
+
+<script>
+    const API_KEY = '3264ba65';
+    let watchlist = JSON.parse(localStorage.getItem('cw_list')) || [];
+    let currentPage = 1;
+    let currentQuery = 'Marvel';
+    let totalResults = 0;
+    let isWatchlistView = false;
+    let isLoading = false;
+
+    const movieGrid = document.getElementById('movieGrid');
+    const searchInput = document.getElementById('searchInput');
+
+    function showSkeletons(append = false) {
+        const skeletonHTML = Array(6).fill(`
+            <div class="movie-card skeleton"></div>
+        `).join('');
+        
+        if (append) movieGrid.insertAdjacentHTML('beforeend', skeletonHTML);
+        else movieGrid.innerHTML = skeletonHTML;
+    }
+
+    function performSearch() {
+        const query = searchInput.value.trim();
+        if (query) {
+            currentQuery = query;
+            currentPage = 1;
+            showHome();
+            window.scrollTo(0,0);
+        }
+    }
+
+    searchInput.onkeypress = (e) => { if(e.key === 'Enter') performSearch(); };
+
+    const scrollObserver = new IntersectionObserver(entries => {
+        if (entries[0].isIntersecting && !isLoading && !isWatchlistView) {
+            if (currentPage * 10 < totalResults) {
+                currentPage++;
+                fetchMovies(currentQuery, currentPage, true);
+            }
+        }
+    }, { threshold: 0.1 });
+    scrollObserver.observe(document.getElementById('loadMoreTrigger'));
+
+    async function fetchMovies(query, page = 1, append = false) {
+        if(isWatchlistView) return;
+        isLoading = true;
+        
+        showSkeletons(append);
+
+        try {
+            const res = await fetch(`https://www.omdbapi.com/?apikey=${API_KEY}&s=${query}&page=${page}`);
+            const data = await res.json();
+            
+            if (data.Response === "True") {
+                totalResults = data.totalResults;
+                renderMovies(data.Search, append);
+                if(page === 1) updateHero(data.Search[0].imdbID);
+            }
+        } catch (e) { console.error(e); }
+        isLoading = false;
+    }
+
+    async function updateHero(id) {
+        const res = await fetch(`https://www.omdbapi.com/?apikey=${API_KEY}&i=${id}`);
+        const m = await res.json();
+        document.getElementById('heroBackdrop').style.backgroundImage = `url(${m.Poster})`;
+        document.getElementById('heroTitle').innerText = m.Title;
+        document.getElementById('heroPlot').innerText = m.Plot;
+        document.getElementById('heroPlayBtn').onclick = () => window.open(`https://www.youtube.com/results?search_query=${m.Title}+trailer`);
+        document.getElementById('heroListBtn').onclick = () => toggleWatchlist(id);
+    }
+
+    function renderMovies(movies, append = false) {
+        if (!append) movieGrid.innerHTML = '';
+        else {
+
+            const skeletons = movieGrid.querySelectorAll('.skeleton');
+            skeletons.forEach(s => s.remove());
+        }
+
+        const movieHTML = movies.map((m) => `
+            <div class="movie-card">
+                <img src="${m.Poster !== 'N/A' ? m.Poster : 'https://via.placeholder.com/300x450'}" loading="lazy">
+                <div class="card-info-overlay">
+                    <h6 class="text-white small fw-bold mb-2">${m.Title}</h6>
+                    <button class="btn-circle ${watchlist.includes(m.imdbID) ? 'active-list' : ''}" 
+                            onclick="toggleWatchlist('${m.imdbID}', event)">
+                        <i class="fas ${watchlist.includes(m.imdbID) ? 'fa-check' : 'fa-plus'}"></i>
+                    </button>
+                </div>
+            </div>
+        `).join('');
+
+        movieGrid.insertAdjacentHTML('beforeend', movieHTML);
+    }
+
+    function toggleWatchlist(id, e) {
+        if(e) e.stopPropagation();
+        const index = watchlist.indexOf(id);
+        index > -1 ? watchlist.splice(index, 1) : watchlist.push(id);
+        localStorage.setItem('cw_list', JSON.stringify(watchlist));
+        if(isWatchlistView) showWatchlist();
+        else {
+            fetchMovies(currentQuery, currentPage, false);
+        }
+    }
+
+    function showHome() {
+        isWatchlistView = false;
+        document.getElementById('heroSection').style.display = 'flex';
+        document.getElementById('link-home').classList.add('active');
+        document.getElementById('link-watchlist').classList.remove('active');
+        fetchMovies(currentQuery, 1, false);
+    }
+
+    async function showWatchlist() {
+        isWatchlistView = true;
+        document.getElementById('heroSection').style.display = 'none';
+        document.getElementById('link-watchlist').classList.add('active');
+        document.getElementById('link-home').classList.remove('active');
+        movieGrid.innerHTML = '';
+        
+        if(watchlist.length === 0) {
+            movieGrid.innerHTML = '<div class="text-center w-100 py-5">Empty Watchlist</div>';
+            return;
+        }
+        
+        showSkeletons();
+        const results = await Promise.all(watchlist.map(id => fetch(`https://www.omdbapi.com/?apikey=${API_KEY}&i=${id}`).then(r => r.json())));
+        renderMovies(results, false);
+    }
+
+    window.onload = () => showHome();
+</script>
+</body>
+</html>
